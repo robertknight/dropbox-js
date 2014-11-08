@@ -1,5 +1,6 @@
 glob = require 'glob'
 open = require 'open'
+fs = require 'fs'
 
 run = require './run'
 
@@ -22,6 +23,27 @@ fasttest = (callback) ->
       test_cases.join(' '), noExit: true, (code) ->
         callback(code) if callback
 
+browserifytest = (callback) ->
+  reporter = if process.env['LIST'] then 'spec' else 'min'
+
+  fs.mkdirSync 'tmp' unless fs.existsSync 'tmp'
+
+  # Make sure we are building this file from scratch.
+  fs.unlinkSync 'tmp/browserified.js' if fs.existsSync 'tmp/browserified.js'
+
+  # Attempt to require dropbox.js in a source file via browserify,
+  # then execute that file. It should execute with no exceptions.
+  command = "node node_modules/browserify/bin/cmd.js -o tmp/browserified.js " +
+    "test/src/browserify_test.js && node tmp/browserified.js"
+
+  run command, noExit: true, (exitCode) ->
+    if exitCode is 0
+      callback() if callback
+      return
+
+    # The build failed.
+    process.exit 1
+
 webtest = (callback) ->
   WebFileServer = require '../test/js/helpers/web_file_server.js'
   webFileServer = new WebFileServer()
@@ -40,3 +62,4 @@ webtest = (callback) ->
 module.exports.fast = fasttest
 module.exports.node = nodetest
 module.exports.web = webtest
+module.exports.browserify = browserifytest

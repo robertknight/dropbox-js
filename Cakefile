@@ -46,6 +46,12 @@ task 'fasttest', ->
         test.fast (code) ->
           process.exit code
 
+task 'browserifytest', ->
+  clean ->
+    build ->
+      test.browserify (code) ->
+        process.exit code
+
 task 'webtest', ->
   vendor ->
     build ->
